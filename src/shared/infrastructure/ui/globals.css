@@ -1,0 +1,193 @@
+@import url('https://fonts.googleapis.com/css2?family=Raleway:wght@400;500;600;700&display=swap');
+
+:root {
+  --max-width: 87.5rem;
+  --font-heading: 'Raleway', system-ui, sans-serif;
+  --font-body: system-ui, sans-serif;
+  font-family: var(--font-body);
+  line-height: 1.5;
+  font-weight: 400;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* Colors - Light theme */
+  --bg-color-light: #ffffff;
+  --text-color-light: #111827;
+  --text-secondary-color-light: #757575;
+  --border-color-light: #eee;
+  --button-bg-color-light: #111827;
+  --button-hover-bg-color-light: #374151;
+  --button-text-color-light: #fff;
+  --link-color-light: #2f79c8;
+  --icon-color-light: #888;
+  --highlight-color-light: #000;
+  --bg-code-color-light: #fafafa;
+  --button-shadow-color-light: #444;
+  --success-color-light: #16a34a;
+  --error-color-light: #dc2626;
+
+  /* Colors - Dark theme */
+  --bg-color-dark: #1c1c1c;
+  --text-color-dark: #f0f0f0;
+  --text-secondary-color-dark: #f0f0f0;
+  --border-color-dark: #444;
+  --button-bg-color-dark: #fff;
+  --button-hover-bg-color-dark: #e5e5e5;
+  --button-text-color-dark: #1c1c1c;
+  --link-color-dark: #fde047;
+  --icon-color-dark: #f0f0f0;
+  --highlight-color-dark: #fff;
+  --bg-code-color-dark: #282c34;
+  --button-shadow-color-dark: #444;
+  --success-color-dark: #22c55e;
+  --error-color-dark: #ef4444;
+
+  /* Default to light theme */
+  --bg-color: var(--bg-color-light);
+  --text-color: var(--text-color-light);
+  --text-secondary-color: var(--text-secondary-color-light);
+  --border-color: var(--border-color-light);
+  --button-bg-color: var(--button-bg-color-light);
+  --button-hover-bg-color: var(--button-hover-bg-color-light);
+  --button-text-color: var(--button-text-color-light);
+  --button-shadow-color: var(--button-shadow-color-light);
+  --link-color: var(--link-color-light);
+  --icon-color: var(--icon-color-light);
+  --highlight-color: var(--highlight-color-light);
+  --bg-code-color: var(--bg-code-color-light);
+  --success-color: var(--success-color-light);
+  --error-color: var(--error-color-light);
+
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-normal: 200ms ease;
+}
+
+[data-theme='light'] {
+  --bg-color: var(--bg-color-light);
+  --text-color: var(--text-color-light);
+  --text-secondary-color: var(--text-secondary-color-light);
+  --border-color: var(--border-color-light);
+  --button-bg-color: var(--button-bg-color-light);
+  --button-hover-bg-color: var(--button-hover-bg-color-light);
+  --button-text-color: var(--button-text-color-light);
+  --button-shadow-color: var(--button-shadow-color-light);
+  --link-color: var(--link-color-light);
+  --icon-color: var(--icon-color-light);
+  --highlight-color: var(--highlight-color-light);
+  --bg-code-color: var(--bg-code-color-light);
+  --success-color: var(--success-color-light);
+  --error-color: var(--error-color-light);
+}
+
+[data-theme='dark'] {
+  --bg-color: var(--bg-color-dark);
+  --text-color: var(--text-color-dark);
+  --text-secondary-color: var(--text-secondary-color-dark);
+  --border-color: var(--border-color-dark);
+  --button-bg-color: var(--button-bg-color-dark);
+  --button-hover-bg-color: var(--button-hover-bg-color-dark);
+  --button-text-color: var(--button-text-color-dark);
+  --button-shadow-color: var(--button-shadow-color-dark);
+  --link-color: var(--link-color-dark);
+  --icon-color: var(--icon-color-dark);
+  --highlight-color: var(--highlight-color-dark);
+  --bg-code-color: var(--bg-code-color-dark);
+  --success-color: var(--success-color-dark);
+  --error-color: var(--error-color-dark);
+}
+
+/* Reset */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  min-height: 100vh;
+  max-width: 100vw;
+  display: flex;
+  flex-direction: column;
+  overflow-x: clip;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
+}
+
+/* Typography */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading);
+}
+
+h1 {
+  font-weight: 700;
+  font-size: 2.5rem;
+}
+
+h2 {
+  font-weight: 600;
+  font-size: 1.5rem;
+}
+
+p,
+span {
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+a {
+  color: var(--link-color);
+  text-decoration: none;
+  font-weight: 500;
+  transition: opacity var(--transition-fast);
+}
+
+a:hover {
+  opacity: 0.8;
+}
+
+b {
+  font-weight: 700;
+}
+
+/* Form elements */
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+button {
+  background-color: var(--button-bg-color);
+  color: var(--button-text-color);
+  border: 1px solid var(--border-color);
+  height: 2.5rem;
+  padding: 0.5rem 1rem;
+  font-weight: bold;
+  font-size: 1rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background-color var(--transition-normal);
+}
+
+button:hover {
+  background-color: var(--button-hover-bg-color);
+}
+
+button:focus,
+button:focus-visible {
+  outline: 4px auto -webkit-focus-ring-color;
+}

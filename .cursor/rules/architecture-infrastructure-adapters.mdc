@@ -1,0 +1,242 @@
+---
+description: Rules for infrastructure adapters (HttpClient and HTTP repositories)
+globs: ["**/infrastructure/adapters/**/*.ts", "**/infrastructure/http/**/*.ts"]
+alwaysApply: false
+---
+
+# Infrastructure Adapters
+
+## HttpClient Module
+
+HTTP adapters don't use `fetch` directly. They use an `HttpClient` class that encapsulates the HTTP library. This is the **only place** where `fetch` is called.
+
+The `HttpClient` accepts optional `HttpClientOptions` to pass additional headers (e.g., authentication tokens).
+
+```typescript
+// src/shared/infrastructure/http/HttpClient.ts
+
+export interface HttpClientOptions {
+  headers?: Record<string, string>;
+}
+
+export class HttpClient {
+  constructor(private readonly baseUrl: string) {}
+
+  async get<T>(path: string, options?: HttpClientOptions): Promise<T> {
+    const response = await fetch(`${this.baseUrl}${path}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers,
+      },
+    });
+    return this.handleResponse(response);
+  }
+
+  async post<T>(path: string, body?: unknown, options?: HttpClientOptions): Promise<T> {
+    const response = await fetch(`${this.baseUrl}${path}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers,
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    return this.handleResponse(response);
+  }
+
+  async put<T>(path: string, body: unknown, options?: HttpClientOptions): Promise<T> {
+    const response = await fetch(`${this.baseUrl}${path}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers,
+      },
+      body: JSON.stringify(body),
+    });
+    return this.handleResponse(response);
+  }
+
+  async patch<T>(path: string, body: unknown, options?: HttpClientOptions): Promise<T> {
+    const response = await fetch(`${this.baseUrl}${path}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers,
+      },
+      body: JSON.stringify(body),
+    });
+    return this.handleResponse(response);
+  }
+
+  async delete(path: string, options?: HttpClientOptions): Promise<void> {
+    const response = await fetch(`${this.baseUrl}${path}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers,
+      },
+    });
+    await this.handleResponse(response);
+  }
+
+  private async handleResponse<T>(response: Response): Promise<T> {
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Request failed' }));
+      throw new Error(error.error || 'Request failed');
+    }
+    const text = await response.text();
+    if (!text) {
+      return undefined as T;
+    }
+    return JSON.parse(text);
+  }
+}
+```
+
+### Using HttpClientOptions for Authentication
+
+```typescript
+// Pass token as header
+const data = await httpClient.get<User>('/profile', {
+  headers: { Authorization: `Bearer ${token}` },
+});
+
+// POST with token
+await httpClient.post('/orders', orderData, {
+  headers: { Authorization: `Bearer ${token}` },
+});
+```
+
+---
+
+## HTTP Repository Adapters
+
+HTTP adapters implement the repository interface with API calls. They live in `infrastructure/adapters/` and receive `HttpClient` as dependency.
+
+```typescript
+// src/orders/infrastructure/adapters/HttpOrderRepository.ts
+import { OrderRepository } from '../../domain/repositories/OrderRepository';
+import { Order } from '../../domain/entities/Order';
+import { Id } from '../../../shared/domain/value-objects/Id';
+import { HttpClient } from '../../../shared/infrastructure/http/HttpClient';
+
+interface OrderResponse {
+  id: string;
+  customerId: string;
+  items: Array<{ productId: string; quantity: number }>;
+  status: string;
+}
+
+export class HttpOrderRepository implements OrderRepository {
+  constructor(private http: HttpClient) {}
+
+  async save(order: Order): Promise<void> {
+    const primitives = order.toPrimitives();
+    await this.http.post('/orders', primitives);
+  }
+
+  async findById(id: Id): Promise<Order | undefined> {
+    try {
+      const data = await this.http.get<OrderResponse>(`/orders/${id.value}`);
+      return this.toDomain(data);
+    } catch {
+      return undefined;
+    }
+  }
+
+  async findByCustomer(customerId: Id): Promise<Order[]> {
+    const data = await this.http.get<OrderResponse[]>(
+      `/orders?customerId=${customerId.value}`
+    );
+    return data.map(item => this.toDomain(item));
+  }
+
+  private toDomain(data: OrderResponse): Order {
+    return Order.fromPrimitives({
+      id: data.id,
+      customerId: data.customerId,
+      items: data.items,
+      status: data.status,
+    });
+  }
+}
+```
+
+---
+
+## Adapter Characteristics
+
+- **Implements domain interface**: Same contract as InMemory
+- **Uses HttpClient**: Never calls `fetch` directly
+- **Transforms data**: API response → Domain entity
+- **Lives in infrastructure**: Part of infrastructure, not domain
+
+---
+
+## Response Type Mapping
+
+Define response types that match your API, then transform to domain entities:
+
+```typescript
+// API response type (matches backend)
+interface OrderResponse {
+  id: string;
+  customer_id: string;  // snake_case from API
+  total_amount: number;
+}
+
+// Transform to domain
+private toDomain(data: OrderResponse): Order {
+  return Order.fromPrimitives({
+    id: data.id,
+    customerId: data.customer_id,  // Map to camelCase
+    totalAmount: data.total_amount,
+  });
+}
+```
+
+---
+
+## When to Use HTTP Adapters
+
+| Context | Use |
+|---------|-----|
+| Repository adapter tests | HttpRepository + Real API (sandbox) |
+| E2E tests | HttpRepository + Real API |
+| Production | HttpRepository |
+
+For unit tests, use InMemoryRepository instead. See @.cursor/rules/architecture-domain-repositories.mdc
+
+---
+
+## File Structure
+
+```
+src/
+├── shared/
+│   └── infrastructure/
+│       └── http/
+│           └── HttpClient.ts         # HttpClient class
+└── [module]/
+    └── infrastructure/
+        └── adapters/
+            └── HttpOrderRepository.ts  # HTTP adapter
+```
+
+---
+
+## Non-Negotiable Rules
+
+### ❌ NEVER:
+1. Use `fetch` directly in adapters (use HttpClient)
+2. Return API response types from repositories (return domain entities)
+3. Put business logic in adapters
+4. Call adapters from hooks (use UseCases)
+
+### ✅ ALWAYS:
+1. Inject HttpClient into HTTP adapters
+2. Define response types that match API contract
+3. Transform API responses to domain entities
+4. Test HTTP adapters against real APIs (integration tests)
+5. Handle HTTP errors appropriately

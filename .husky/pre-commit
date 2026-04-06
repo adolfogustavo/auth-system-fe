@@ -1,0 +1,8 @@
+#!/usr/bin/env sh
+
+# Load node environment
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+npm run lint-staged
+npm run compile

@@ -1,0 +1,136 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 2rem;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.subtitle {
+  font-size: 0.875rem;
+  color: var(--text-secondary-color);
+}
+
+.statusCard {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.5rem;
+  background-color: var(--bg-code-color);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.statusRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.label {
+  font-size: 0.875rem;
+  color: var(--text-secondary-color);
+}
+
+.value {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-color);
+}
+
+.statusBadge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.healthy {
+  composes: statusBadge;
+  background-color: rgba(22, 163, 74, 0.1);
+  color: var(--success-color);
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  color: var(--text-secondary-color);
+}
+
+.error {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  background-color: rgba(220, 38, 38, 0.1);
+  border-radius: 8px;
+  border: 1px solid var(--error-color);
+}
+
+.errorTitle {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--error-color);
+}
+
+.errorMessage {
+  font-size: 0.875rem;
+  color: var(--error-color);
+}
+
+.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  color: var(--text-secondary-color);
+  font-size: 0.875rem;
+}
+
+.refreshButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background-color: var(--button-bg-color);
+  color: var(--button-text-color);
+  border-radius: 8px;
+  font-weight: 500;
+  transition:
+    background-color var(--transition-fast),
+    opacity var(--transition-fast);
+}
+
+.refreshButton:hover {
+  background-color: var(--button-hover-bg-color);
+}
+
+.refreshButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem;
+  }
+}

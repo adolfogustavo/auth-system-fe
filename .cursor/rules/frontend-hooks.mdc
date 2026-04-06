@@ -1,0 +1,325 @@
+---
+description: Rules for React hooks
+globs: ["src/**/*.hook.ts"]
+alwaysApply: false
+---
+
+# React Custom Hooks
+
+## Separate Business Logic from Presentation
+
+- **Hooks** = how things work (logic, state)
+- **Components** = how things look (presentation)
+- Don't mix responsibilities
+
+## Keep Them Simple
+
+- If the hook grows too much, refactor it
+- Divide and conquer
+
+## Don't Use Context API
+
+- `useContext` and `createContext` are **prohibited**
+- Use custom Subjects for shared state instead
+
+```typescript
+// Use Subject from shared package for shared state
+import { Subject } from '../shared/domain/Subject';
+```
+
+## Pass Dependencies as Parameters
+
+- Use cases as hook parameters, not global calls
+- Don't call dependencies globally inside the hook
+- This makes testing much easier
+
+```typescript
+// Good - dependency passed as parameter
+export function useProfile(useCase: GetProfileUseCase) { ... }
+
+// Bad - global dependency call
+export function useProfile() {
+  const useCase = Factory.createGetProfileUseCase(); // Don't do this
+}
+```
+
+## Use Pure Functions Directly
+
+- Don't pass pure functions through props
+- Import and use them where needed
+
+```typescript
+// Good - import and use directly
+import { filterUsers } from '../../application/filterUsers';
+const filtered = filterUsers(users, filters);
+
+// Bad - passing pure function as prop
+<Component filterFn={filterUsers} />
+```
+
+## Dependency Boundaries
+
+Hooks follow hexagonal architecture boundaries:
+
+**Hooks CAN access:**
+- **UseCases** (for async operations with side effects)
+- **Pure domain functions** (for transformations, filters, validations)
+
+**Hooks NEVER access:**
+- Repositories directly
+- `fetch` or HTTP APIs
+- Infrastructure adapters
+- Factory (except in root component to create use cases)
+
+```typescript
+// Good - hook calls UseCase
+const loadProfile = async () => {
+  const profile = await useCase.execute();
+  setProfile(profile);
+};
+
+// Good - hook uses pure domain function
+import { filterActiveUsers } from '../../domain/services/userFilters';
+const activeUsers = filterActiveUsers(users);
+
+// Bad - hook calls repository directly
+const loadProfile = async () => {
+  const profile = await repository.findById(id); // Don't do this
+};
+
+// Bad - hook uses fetch directly
+const loadProfile = async () => {
+  const response = await fetch('/api/profile'); // Don't do this
+};
+```
+
+This keeps hooks testable with InMemoryRepositories injected into UseCases.
+
+## Only useState Inside Hooks
+
+- No `useEffect` inside hooks (it belongs in the component)
+- The hook only represents component behavior and state
+- `useEffect` is about component lifecycle - keep it visible in the component
+
+## Don't Nest Functions Inside Functions
+
+- One closure (the hook itself) is enough
+- Hook functions go at the first level
+
+```typescript
+// Good - arrow functions at first level
+export function useProfile(useCase: GetProfileUseCase) {
+  const [state, setState] = useState<ProfileState>(initialState);
+
+  const startLoading = () => { ... };
+  const setProfile = (profile: ProfileDTO) => { ... };
+  const loadProfile = async () => { ... };
+
+  return { ... };
+}
+
+// Bad - nested functions
+export function useProfile(useCase: GetProfileUseCase) {
+  const loadProfile = async () => {
+    const handleSuccess = () => { ... };  // Don't nest
+    const handleError = () => { ... };    // Don't nest
+  };
+}
+```
+
+## Encapsulate State and Updates
+
+- Don't expose state directly
+- Don't expose setState
+- Create functions with explicit names that handle changes
+
+```typescript
+// Good - encapsulated
+return {
+  profile: state.profile,
+  loading: state.loading,
+  error: state.error,
+  loadProfile,
+  updateName,
+};
+
+// Bad - exposed state and setter
+return {
+  state,        // Don't expose raw state
+  setState,     // Don't expose setter
+};
+```
+
+## Only One useState
+
+- Don't declare multiple useState calls
+- Don't use useReducer
+- Group all state in a single typed object
+
+```typescript
+// Good - single useState with grouped state
+interface ProfileState {
+  profile: Maybe<ProfileDTO>;
+  loading: boolean;
+  error: Maybe<Error>;
+}
+
+const [state, setState] = useState<ProfileState>(initialState);
+
+// Bad - multiple useState
+const [profile, setProfile] = useState<ProfileDTO | null>(null);
+const [loading, setLoading] = useState(false);
+const [error, setError] = useState<Error | null>(null);
+```
+
+## Use Previous State When Updating
+
+- Always use `setState(prev => ...)` not `setState(newValue)`
+- This avoids inconsistencies due to concurrency
+
+```typescript
+// Good - using previous state
+const startLoading = () => {
+  setState(prev => ({ ...prev, loading: true, error: Maybe.none() }));
+};
+
+const setProfile = (profile: ProfileDTO) => {
+  setState(prev => ({ ...prev, profile: Maybe.some(profile), loading: false }));
+};
+
+// Bad - using current state directly
+const startLoading = () => {
+  setState({ ...state, loading: true });  // May cause race conditions
+};
+```
+
+---
+
+## Complete Example
+
+```typescript
+import { useState } from 'react';
+import { Maybe } from '../shared/domain/Maybe';
+import { ProfileDTO } from '../../application/ProfileDTO';
+import { GetProfileUseCase } from '../../application/GetProfileUseCase';
+
+interface ProfileState {
+  profile: Maybe<ProfileDTO>;
+  loading: boolean;
+  error: Maybe<Error>;
+}
+
+const initialState: ProfileState = {
+  profile: Maybe.none(),
+  loading: false,
+  error: Maybe.none(),
+};
+
+export function useProfile(useCase: GetProfileUseCase) {
+  const [state, setState] = useState<ProfileState>(initialState);
+
+  const startLoading = () => {
+    setState(prev => ({ ...prev, loading: true, error: Maybe.none() }));
+  };
+
+  const setProfile = (profile: ProfileDTO) => {
+    setState(prev => ({ ...prev, profile: Maybe.some(profile), loading: false }));
+  };
+
+  const setError = (error: Error) => {
+    setState(prev => ({ ...prev, error: Maybe.some(error), loading: false }));
+  };
+
+  const loadProfile = async () => {
+    startLoading();
+    try {
+      const profile = await useCase.execute();
+      setProfile(profile);
+    } catch (error) {
+      setError(error as Error);
+    }
+  };
+
+  return {
+    profile: state.profile,
+    loading: state.loading,
+    error: state.error,
+    loadProfile,
+  };
+}
+```
+
+---
+
+## Allowed Hooks
+
+| Hook | Where | Use |
+|------|-------|-----|
+| `useState` | Custom Hook | One per hook, grouped state |
+| `useEffect` | Component | Lifecycle, NOT in hooks |
+| `useRef` | Component | DOM references only |
+
+## Prohibited Hooks
+
+- `useContext` / `createContext` - use Subjects
+- `useMemo` / `useCallback` - premature optimization
+- `useReducer` - useState is enough
+- Any hook inside custom hooks (except the single useState)
+
+---
+
+## State with Maybe
+
+- Use `Maybe<T>` for optional values, **never null**
+- Initial state uses `Maybe.none()` for optional fields
+
+```typescript
+import { Maybe } from '../shared/domain/Maybe';
+```
+
+## File Naming
+
+- `ComponentName.hook.ts` (e.g., `Profile.hook.ts`)
+
+## Consuming Hooks
+
+- **Do NOT destructure** hook results
+- Use `hook.property` pattern for clarity
+
+```typescript
+// Bad - destructuring
+const { profile, loading, loadProfile } = useProfile(useCase);
+
+// Good - hook.property
+const profileHook = useProfile(useCase);
+// usage: profileHook.profile, profileHook.loading, profileHook.loadProfile()
+```
+
+---
+
+## Non-Negotiable Rules
+
+### NEVER:
+1. Use Context API (useContext, createContext)
+2. Put useEffect or other hooks inside custom hooks
+3. Declare multiple useState calls
+4. Use useReducer
+5. Expose state or setState directly
+6. Nest functions inside functions
+7. Use null/undefined for optional values (use Maybe)
+8. Destructure hook results when consuming
+9. Call dependencies globally inside hooks
+10. Update state without using previous state (`prev => ...`)
+11. Call repositories or fetch directly (use UseCases)
+12. Import from infrastructure/adapters/
+
+### ALWAYS:
+1. Pass dependencies (use cases) as parameters
+2. Group state in a single typed interface
+3. Use `Maybe.none()` for initial optional values
+4. Encapsulate state changes in explicit functions
+5. Use `setState(prev => ...)` pattern
+6. Keep hooks simple - refactor if they grow
+7. Use `hook.property` pattern when consuming hooks
+8. Access external services only through UseCases
+9. Use domain pure functions for transformations

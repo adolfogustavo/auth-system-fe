@@ -1,0 +1,158 @@
+---
+description: Rules for React components
+globs: ["src/**/*.tsx"]
+alwaysApply: false
+---
+
+# React Components
+
+## Props
+
+- **NO destructuring**: use `props.x`, not `{ x }`
+- Props interface defined above component function
+- Use explicit interface, not inline type
+
+```typescript
+interface Props {
+  useCase: HealthUseCase;
+}
+
+export function Health(props: Props) {
+  const hook = useHealth(props.useCase);
+  // ...
+}
+```
+
+## useEffect
+
+- useEffect lives in the **component**, not in hooks
+- Trigger hook action functions from useEffect
+- Dependencies should include the action function from the hook
+
+```typescript
+export function Health(props: Props) {
+  const hook = useHealth(props.useCase);
+
+  useEffect(() => {
+    hook.fetch();
+  }, [hook.fetch]);
+
+  // ...
+}
+```
+
+## Maybe Handling
+
+- Use `state.value.isSome()` for conditionals
+- Use `state.value.fold()` for rendering different states
+- Use `state.value.getOrThrow()` only when `isSome()` is already checked
+
+```typescript
+if (hook.error.isSome()) {
+  return (
+    <div className={styles.error}>
+      Error: {hook.error.getOrThrow().message}
+    </div>
+  );
+}
+
+return hook.health.fold(
+  () => <div className={styles.empty}>No health data</div>,
+  (health) => (
+    <div className={styles.container}>
+      <span className={health.isHealthy ? styles.healthy : styles.unhealthy}>
+        {health.status}
+      </span>
+    </div>
+  )
+);
+```
+
+## Styling
+
+- CSS Modules only
+- File naming: `ComponentName.module.css`
+- Import as `styles`
+
+```typescript
+import styles from './Health.module.css';
+```
+
+## File Naming
+
+- `ComponentName.tsx` (e.g., `Health.tsx`)
+
+---
+
+## Container Pattern
+
+Components and their containers live in the same file. The container uses Factory to create dependencies.
+
+```typescript
+// Health.tsx
+import { useEffect } from 'react';
+import { useHealth } from './Health.hook';
+import { HealthUseCase } from '../../../application/HealthUseCase';
+import { Factory } from '../../../../shared/infrastructure/factory';
+import styles from './Health.module.css';
+
+interface Props {
+  useCase: HealthUseCase;
+}
+
+// Presentational component (testeable)
+export function Health(props: Props) {
+  const hook = useHealth(props.useCase);
+
+  useEffect(() => {
+    hook.loadHealthStatus();
+  }, [hook.loadHealthStatus]);
+
+  return hook.health.fold(
+    () => <div className={styles.empty}>No health data</div>,
+    (health) => <div className={styles.status}>{health.status}</div>
+  );
+}
+
+// Container (uses Factory, for routes)
+export function HealthContainer() {
+  const useCase = Factory.createHealthUseCase();
+  return <Health useCase={useCase} />;
+}
+```
+
+### When to use each
+
+| Export | Use | Testeable |
+|--------|-----|-----------|
+| `Health` | Component tests | ✅ Yes (receives UseCase via props) |
+| `HealthContainer` | Routes, App | ❌ No (uses Factory, test via E2E) |
+
+### In routes
+
+```typescript
+<Route path="/health" element={<HealthContainer />} />
+```
+
+---
+
+## Non-Negotiable Rules
+
+### ❌ NEVER:
+1. Destructure props: `function Health({ useCase })` 
+2. Put useEffect inside hooks
+3. Use inline styles or global CSS
+4. Use null checks instead of Maybe methods
+5. Destructure hook results
+6. Use Factory in presentational components (use Container)
+7. Test containers directly (test via E2E)
+
+### ✅ ALWAYS:
+1. Access props via `props.x`
+2. Define Props interface above component
+3. Use Maybe.fold() for rendering optional values
+4. Use CSS Modules for styling
+5. Put useEffect in component to trigger hook actions
+6. Use `hook.property` pattern when consuming hooks
+7. Export both Component and Container from same file
+8. Use Container in routes, Component in tests

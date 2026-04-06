@@ -1,0 +1,220 @@
+---
+description: Hexagonal Architecture with vertical slicing by modules
+alwaysApply: true
+---
+
+# Hexagonal Architecture
+
+## Module Structure (Vertical Slicing)
+
+Code is organized by **business modules**, not by technical layer (screaming architecture).
+
+```
+src/
+├── shared/
+│   ├── domain/
+│   │   └── Maybe.ts                  # Optional value type
+│   └── infrastructure/
+│       ├── http/
+│       │   └── HttpClient.ts         # Interface + FetchHttpClient
+│       ├── factory.ts                # Dependency wiring
+│       └── ui/                       # Common components
+├── [module]/
+│   ├── domain/
+│   │   ├── entities/
+│   │   │   └── Entity.ts
+│   │   ├── value-objects/
+│   │   │   └── ValueObject.ts
+│   │   ├── services/
+│   │   │   └── DomainService.ts
+│   │   └── repositories/
+│   │       └── Repository.ts         # Interface + InMemory
+│   ├── application/
+│   │   ├── UseCase.ts
+│   │   ├── DTO.ts                    # DTO for UI
+│   │   └── ports/
+│   │       └── ExternalService.ts    # External service ports
+│   ├── infrastructure/
+│   │   ├── adapters/
+│   │   │   └── HttpRepository.ts     # Uses HttpClient
+│   │   └── ui/
+│   │       ├── Component.tsx
+│   │       ├── Component.module.css
+│   │       └── Component.hook.ts
+│   └── tests/
+│       ├── unit/
+│       │   ├── Entity.test.ts
+│       │   ├── ValueObject.test.ts
+│       │   └── UseCase.test.ts
+│       ├── integration/
+│       │   └── HttpRepository.integration.test.ts
+│       └── e2e/
+│           └── Feature.spec.ts       # Playwright
+```
+
+---
+
+## Layers and Responsibilities
+
+### 1. Domain (Center of the Hexagon)
+
+- **Entities**: Objects with identity and lifecycle
+- **Value Objects**: Immutable objects defined by their attributes
+- **Domain Services**: Logic that doesn't belong to a specific entity
+- **Repositories**: Interfaces + InMemory implementations
+- **DomainError**: Single error class with factory methods
+- **No dependencies** towards application or infrastructure
+- **No frameworks** or external libraries
+
+### 2. Application (Use Cases)
+
+- **Use Cases**: Orchestrate business logic, return DTOs
+- **DTOs**: Plain objects for UI consumption
+- **External Service Ports**: Interfaces for external services
+- Depends **only** on Domain
+
+### 3. Infrastructure (Adapters + UI)
+
+- **HttpClient**: Encapsulates fetch (only place where fetch is used)
+- **Adapters**: HTTP implementations using HttpClient
+- **UI**: React components, hooks, CSS Modules
+- Depends on Application and Domain
+- **Frameworks and libraries live here**
+
+---
+
+## Dependency Rule
+
+```
+Infrastructure → Application → Domain
+     ↓               ↓           ↓
+(Adapters, UI)  (Use Cases)  (Entities)
+```
+
+- Dependencies **always point towards the center**
+- Domain **never** imports from Application or Infrastructure
+- Application **never** imports from Infrastructure
+
+## Dependency Chain
+
+```
+Component → Hook → UseCase → Repository
+```
+
+- **Component**: Receives UseCase via props
+- **Hook**: Receives UseCase as parameter
+- **UseCase**: Receives Repository via constructor
+- **Repository**: Receives HttpClient via constructor
+
+---
+
+## UI Patterns
+
+See detailed rules in:
+- @.cursor/rules/frontend-hooks.mdc
+- @.cursor/rules/frontend-components.mdc
+- @.cursor/rules/frontend-css-modules.mdc
+
+---
+
+## Cross-Module Communication
+
+Modules can share code with restrictions:
+
+### ✅ Can import from another module
+
+- Domain entities and value objects
+- Repository interfaces (ports)
+
+```typescript
+// ✅ GOOD
+import { Product } from '../../products/domain/entities/Product';
+import { ProductRepository } from '../../products/domain/repositories/ProductRepository';
+```
+
+### ❌ Cannot import from another module
+
+- UseCases (a UseCase must never call another UseCase)
+
+```typescript
+// ❌ BAD
+import { CreateProductUseCase } from '../../products/application/CreateProductUseCase';
+```
+
+---
+
+## Naming Conventions
+
+### Allowed suffixes by layer
+
+| Layer | Allowed Suffixes |
+|-------|-----------------|
+| Domain | Entity (implicit), ValueObject, DomainService, Repository (interface + InMemory) |
+| Application | UseCase, DTO, Port (for external services) |
+| Infrastructure | HttpRepository, Adapter, Client |
+| UI | Component (implicit), .hook.ts, .module.css |
+
+### File naming
+
+- One file per class/interface
+- File name = Class name
+- Use PascalCase: `CreateOrderUseCase.ts`, `OrderRepository.ts`
+
+### Examples
+
+```typescript
+// Domain - entities/
+Order.ts              // Entity
+
+// Domain - value-objects/
+Money.ts              // Value Object
+OrderId.ts            // Value Object
+
+// Domain - services/
+PricingService.ts     // Domain Service
+
+// Domain - repositories/
+OrderRepository.ts    // Interface + InMemory implementation
+
+// Application
+CreateOrderUseCase.ts
+OrderDTO.ts
+PaymentGateway.ts     // External service port (interface)
+
+// Infrastructure - adapters/
+HttpOrderRepository.ts
+
+// Infrastructure - ui/
+OrderList.tsx
+OrderList.module.css
+OrderList.hook.ts
+
+// Shared
+HttpClient.ts         # Interface + FetchHttpClient
+Maybe.ts              # Optional value type
+DomainError.ts        # DomainError with factory methods
+```
+
+---
+
+## Non-Negotiable Rules
+
+### ❌ NEVER:
+1. Import frameworks or libraries in Domain
+2. Import from Application or Infrastructure in Domain
+3. Import from Infrastructure in Application
+4. Import a UseCase from another module
+5. Put business logic in Infrastructure (adapters or UI)
+6. Use `fetch` directly in adapters (use HttpClient)
+7. Use `fetch` or repositories in hooks (use UseCases)
+8. Use null (use Maybe)
+
+### ✅ ALWAYS:
+1. Create a port (interface) before its adapter
+2. Keep Domain free of external dependencies
+3. Validate the dependency rule on every import
+4. Group code by business module, not by technical layer
+5. UI lives in infrastructure/ui/
+6. Logic in application/ (use cases)
+7. Inject HttpClient into HTTP adapters
+8. Hooks only access UseCases and pure domain functions

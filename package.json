@@ -1,0 +1,79 @@
+{
+  "name": "frontend-template",
+  "version": "1.0.0",
+  "description": "Frontend template with hexagonal architecture and React",
+  "type": "module",
+  "scripts": {
+    "prepare": "husky install",
+    "start": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "clean": "rm -rf dist coverage",
+    "analyze": "npm run lint:fix && npm run compile",
+    "compile": "tsc --noEmit",
+    "compile:watch": "tsc --noEmit --watch",
+    "lint": "eslint . --ext .ts,.tsx",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "lint-staged": "lint-staged",
+    "lint-staged:debug": "lint-staged --debug",
+    "format": "prettier --config .prettierrc '**/*.+(ts|tsx|css)'",
+    "format:check": "prettier --config .prettierrc '**/*.+(ts|tsx|css)' --check",
+    "format:fix": "prettier --config .prettierrc '**/*.+(ts|tsx|css)' --write",
+    "test": "jest --verbose --testPathIgnorePatterns=/integration/",
+    "test:all": "npm run test && npm run test:integration && npm run test:e2e",
+    "test:unit": "jest --testPathPatterns=unit",
+    "test:integration": "jest --config jest.integration.config.js",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:ci": "jest --ci --coverage --maxWorkers=2",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "validate": "npm run compile && npm run lint && npm run test",
+    "validate:full": "npm run compile && npm run lint && npm run test:all",
+    "upgrade": "ncu -i",
+    "upgrade:all": "ncu -u"
+  },
+  "author": "Softwarecrafters.io",
+  "license": "MIT",
+  "devDependencies": {
+    "@playwright/test": "^1.50.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.2.0",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^24.10.1",
+    "@types/react": "^19.0.8",
+    "@types/react-dom": "^19.0.3",
+    "@typescript-eslint/eslint-plugin": "^8.48.1",
+    "@typescript-eslint/parser": "^8.48.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "eslint": "^9.39.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "eslint-plugin-react-refresh": "^0.4.18",
+    "husky": "^9.1.7",
+    "identity-obj-proxy": "^3.0.0",
+    "jest": "^30.2.0",
+    "jest-environment-jsdom": "^30.2.0",
+    "lint-staged": "^16.2.7",
+    "npm-check-updates": "^19.1.2",
+    "prettier": "^3.7.4",
+    "ts-jest": "^29.4.6",
+    "typescript": "^5.9.3",
+    "vite": "^6.2.0"
+  },
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-router-dom": "^7.2.0"
+  },
+  "lint-staged": {
+    "*.+(ts|tsx)": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.css": [
+      "prettier --write"
+    ]
+  }
+}

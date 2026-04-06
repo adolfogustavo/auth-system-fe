@@ -1,0 +1,24 @@
+node_modules
+lib
+.idea
+coverage
+.DS_Store
+
+# Build
+dist
+
+# Playwright
+test-results
+playwright-report
+playwright/.cache
+
+# Environment
+.env
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor
+*.swp
+*.swo
