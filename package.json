@@ -31,11 +31,13 @@
     "validate": "npm run compile && npm run lint && npm run test",
     "validate:full": "npm run compile && npm run lint && npm run test:all",
     "upgrade": "ncu -i",
-    "upgrade:all": "ncu -u"
+    "upgrade:all": "ncu -u",
+    "mcp:playwright": "node ./node_modules/@playwright/mcp/cli.js"
   },
   "author": "Softwarecrafters.io",
   "license": "MIT",
   "devDependencies": {
+    "@playwright/mcp": "^0.0.64",
     "@playwright/test": "^1.50.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",
