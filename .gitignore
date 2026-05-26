@@ -22,3 +22,5 @@ npm-debug.log*
 # Editor
 *.swp
 *.swo
+
+.cursor

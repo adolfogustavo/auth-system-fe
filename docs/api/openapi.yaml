@@ -1,0 +1,463 @@
+openapi: 3.0.3
+info:
+  title: Auth System API
+  version: 1.0.0
+  description: |
+    API de autenticación por OTP y actualización de perfil.
+
+    **Flujo:** registrar email → solicitar OTP (`POST /auth/login`) → verificar (`POST /auth/verify`) → usar JWT en `GET/PUT /profile/me`.
+
+    Con el servidor en marcha: Swagger UI en `/api-docs/` y la spec en `GET /openapi.yaml`.
+    También puedes importar este archivo en Postman, Insomnia o Swagger Editor.
+servers:
+  - url: http://localhost:8080
+    description: Desarrollo local (usa PORT=8080 o ajusta esta URL si ejecutas con PORT=3000 por defecto)
+tags:
+  - name: Health
+    description: Estado del servicio
+  - name: Auth
+    description: Registro y autenticación OTP
+  - name: Profile
+    description: Perfil de usuario
+paths:
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Health check
+      description: Devuelve el registro de salud con timestamps para medir uptime desde la primera petición.
+      responses:
+        '200':
+          description: Servicio operativo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '500':
+          description: Error interno
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /auth/register:
+    post:
+      tags:
+        - Auth
+      summary: Register user
+      description: Crea un usuario con el email indicado. Respuesta mínima `id` y `email`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+      responses:
+        '201':
+          description: Usuario creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterUserResponse'
+        '400':
+          description: Email inválido u otro error de validación
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidEmail:
+                  value:
+                    error: Invalid email format
+        '409':
+          description: Email ya registrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                duplicate:
+                  value:
+                    error: Email already registered
+        '500':
+          description: Error interno
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /auth/login:
+    post:
+      tags:
+        - Auth
+      summary: Request OTP
+      description: |
+        Genera sesión OTP para un usuario existente y envía el código (p. ej. consola en desarrollo).
+        Si la cuenta está bloqueada por intentos fallidos, responde 429 con `Account is locked`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+      responses:
+        '200':
+          description: OTP enviado
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+                    example: OTP sent
+        '400':
+          description: Validación (p. ej. formato de email inválido)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Usuario no registrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  value:
+                    error: User not found
+        '429':
+          description: Cuenta bloqueada temporalmente (no se puede solicitar OTP hasta que expire el bloqueo)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                locked:
+                  value:
+                    error: Account is locked
+        '500':
+          description: Error interno
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /auth/verify:
+    post:
+      tags:
+        - Auth
+      summary: Verify OTP
+      description: |
+        Valida el OTP de 6 dígitos y devuelve un JWT. La mayoría de fallos de negocio se mapean a 400;
+        el bloqueo por intentos puede responder 429 con `Account locked`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - otp
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+                otp:
+                  type: string
+                  pattern: '^\d{6}$'
+                  example: '123456'
+      responses:
+        '200':
+          description: Autenticación correcta
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - token
+                properties:
+                  token:
+                    type: string
+                    description: JWT HS256 con claim `email`, expiración 24h
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        '400':
+          description: Sin sesión OTP, OTP incorrecto, expirado, formato inválido, etc.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                noSession:
+                  value:
+                    error: No OTP session found
+                invalidOtp:
+                  value:
+                    error: Invalid OTP
+                expired:
+                  value:
+                    error: OTP has expired
+                badFormat:
+                  value:
+                    error: OTP must be 6 numeric digits
+        '429':
+          description: Cuenta bloqueada tras demasiados intentos fallidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                locked:
+                  value:
+                    error: Account locked
+        '500':
+          description: Error interno
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /profile/me:
+    get:
+      tags:
+        - Profile
+      summary: Get current profile
+      description: Obtiene el perfil del usuario autenticado con un contrato mínimo.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Perfil actual del usuario
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentUserProfileResponse'
+        '401':
+          description: Falta Bearer o token inválido/expirado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missing:
+                  value:
+                    error: Authorization token required
+                invalid:
+                  value:
+                    error: Invalid or expired token
+        '404':
+          description: Usuario no encontrado para el email del token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Error interno
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags:
+        - Profile
+      summary: Update profile
+      description: |
+        Actualiza `name`, `lastName` y/o `phone`. Debe enviarse al menos uno de estos campos.
+        No se permiten propiedades adicionales. Teléfono: solo dígitos, longitud 7–15 (sin prefijo +).
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfileUpdateRequest'
+            examples:
+              partial:
+                summary: Solo nombre
+                value:
+                  name: Jane
+              full:
+                value:
+                  name: Jane
+                  lastName: Doe
+                  phone: '612345678'
+      responses:
+        '200':
+          description: Perfil actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileResponse'
+        '400':
+          description: Cuerpo vacío, campos inesperados, tipo incorrecto o teléfono inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidBody:
+                  value:
+                    error: Invalid request body
+                empty:
+                  value:
+                    error: At least one of name, lastName, or phone is required
+                unexpected:
+                  value:
+                    error: 'Unexpected fields: extraField'
+                phone:
+                  value:
+                    error: Invalid phone format
+        '401':
+          description: Falta Bearer o token inválido/expirado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missing:
+                  value:
+                    error: Authorization token required
+                invalid:
+                  value:
+                    error: Invalid or expired token
+        '404':
+          description: Usuario no encontrado para el email del token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Error interno
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT obtenido en POST /auth/verify. Payload incluye `email`; algoritmo HS256; expira a las 24 horas.
+  schemas:
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          example: Error message
+    HealthResponse:
+      type: object
+      required:
+        - id
+        - status
+        - createdAt
+        - lastCheckedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+            - healthy
+          example: healthy
+        createdAt:
+          type: string
+          format: date-time
+        lastCheckedAt:
+          type: string
+          format: date-time
+    RegisterUserResponse:
+      type: object
+      required:
+        - id
+        - email
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+    CurrentUserProfileResponse:
+      type: object
+      required:
+        - id
+        - email
+        - fullName
+        - phone
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        fullName:
+          type: string
+        phone:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+    UserProfileResponse:
+      type: object
+      required:
+        - id
+        - email
+        - createdAt
+        - name
+        - lastName
+        - phone
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        createdAt:
+          type: string
+          format: date-time
+        name:
+          type: string
+          nullable: true
+        lastName:
+          type: string
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+    ProfileUpdateRequest:
+      type: object
+      description: Al menos una propiedad entre name, lastName y phone.
+      properties:
+        name:
+          type: string
+        lastName:
+          type: string
+        phone:
+          type: string
+          pattern: '^\d{7,15}$'
+          description: Solo dígitos, sin +
