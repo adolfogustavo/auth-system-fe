@@ -72,9 +72,11 @@ npm install
 ### Development
 
 ```bash
-# Start development server
+# Start development server (http://localhost:4200)
 npm start
 ```
+
+The Vite server uses port **4200** with `strictPort: true` (it fails if the port is already in use instead of switching to another one). In development, requests to `/api` are proxied to `http://localhost:8080`.
 
 ### Environment Variables
 
@@ -86,7 +88,7 @@ cp .env.example .env
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `VITE_API_URL` | Backend API URL | `/api` |
+| `VITE_API_URL` | Backend API URL (use `/api` so Vite proxy handles it in development) | `/api` |
 
 ### Testing
 
@@ -165,10 +167,11 @@ Dependencies always point inward. Domain has no external dependencies.
 
 ## Connecting to Backend
 
-This frontend is designed to work with the `backend-template`:
+This frontend is designed to work with the `backend-template` / `auth-system`:
 
-1. Start the backend on port 8080
-2. Run `npm start`
+1. Start the backend on port 8080 (with `CORS_ORIGIN=http://localhost:4200`)
+2. Run `npm start` on this project → frontend at http://localhost:4200
+3. Keep `VITE_API_URL=/api` so the browser talks to the same origin and Vite proxies to the backend
 
 ## Cursor IDE
 
