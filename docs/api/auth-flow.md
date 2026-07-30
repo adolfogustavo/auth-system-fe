@@ -48,7 +48,7 @@ sequenceDiagram
     MW->>MW: Extract email from token
     MW->>UC: GetCurrentUserUseCase
     UC->>D: Find User by email
-    API-->>U: 200 {id, email, fullName, phone, createdAt}
+    API-->>U: 200 {id, email, name, lastName, phone, createdAt}
 
     Note over U,D: UPDATE PROFILE
     U->>API: PUT /profile/me {name?, lastName?, phone?} [Bearer token]
@@ -164,7 +164,8 @@ Response 200:
 {
   "id": "550e8400-e29b-41d4-a716-446655440000",
   "email": "user@example.com",
-  "fullName": "Jane Doe",
+  "name": "Jane",
+  "lastName": "Doe",
   "phone": "612345678",
   "createdAt": "2024-01-01T00:00:00.000Z"
 }

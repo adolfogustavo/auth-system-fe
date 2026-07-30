@@ -403,7 +403,8 @@ components:
       required:
         - id
         - email
-        - fullName
+        - name
+        - lastName
         - phone
         - createdAt
       properties:
@@ -413,8 +414,12 @@ components:
         email:
           type: string
           format: email
-        fullName:
+        name:
           type: string
+          nullable: true
+        lastName:
+          type: string
+          nullable: true
         phone:
           type: string
           nullable: true

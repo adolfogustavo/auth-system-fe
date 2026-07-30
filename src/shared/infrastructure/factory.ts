@@ -10,11 +10,16 @@ import { VerifyOtpUseCase } from '../../auth/application/VerifyOtpUseCase';
 import { LogoutUseCase } from '../../auth/application/LogoutUseCase';
 import { TokenPort } from '../application/ports/TokenPort';
 import { LocalStorageTokenAdapter } from './adapters/LocalStorageTokenAdapter';
+import { ProfileRepository } from '../../profile/domain/repositories/ProfileRepository';
+import { HttpProfileRepository } from '../../profile/infrastructure/adapters/HttpProfileRepository';
+import { GetProfileUseCase } from '../../profile/application/GetProfileUseCase';
+import { UpdateProfileUseCase } from '../../profile/application/UpdateProfileUseCase';
 
 export class Factory {
   private static readonly apiBaseUrl = import.meta.env.VITE_API_URL || '/api';
   private static httpClient?: HttpClient;
   private static healthRepository?: HealthRepository;
+  private static profileRepository?: ProfileRepository;
   private static authPort?: AuthPort;
   private static tokenPort?: TokenPort;
 
@@ -64,5 +69,20 @@ export class Factory {
 
   static createLogoutUseCase(): LogoutUseCase {
     return new LogoutUseCase(this.getTokenPort());
+  }
+
+  static getProfileRepository(): ProfileRepository {
+    if (!this.profileRepository) {
+      this.profileRepository = new HttpProfileRepository(this.getHttpClient(), this.getTokenPort());
+    }
+    return this.profileRepository;
+  }
+
+  static createGetProfileUseCase(): GetProfileUseCase {
+    return new GetProfileUseCase(this.getProfileRepository());
+  }
+
+  static createUpdateProfileUseCase(): UpdateProfileUseCase {
+    return new UpdateProfileUseCase(this.getProfileRepository());
   }
 }

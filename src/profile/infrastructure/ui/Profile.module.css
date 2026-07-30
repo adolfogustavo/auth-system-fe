@@ -3,7 +3,7 @@
   flex-direction: column;
   gap: 1.5rem;
   padding: 2rem;
-  max-width: 600px;
+  max-width: 400px;
   margin: 0 auto;
 }
 
@@ -14,36 +14,193 @@
 }
 
 .title {
+  font-family: var(--font-heading);
   font-size: 1.5rem;
   font-weight: 600;
   color: var(--text-color);
+  text-align: left;
 }
 
 .subtitle {
+  font-family: var(--font-body);
   font-size: 0.875rem;
+  color: var(--text-secondary-color);
+  text-align: left;
+}
+
+.loading {
+  font-family: var(--font-body);
+  font-size: 1rem;
   color: var(--text-secondary-color);
 }
 
-.placeholder {
+.guidance {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.75rem 1rem;
+  background-color: rgba(37, 99, 235, 0.08);
+  border-radius: 8px;
+  border: 1px solid var(--link-color);
+}
+
+.guidanceMessage {
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  color: var(--text-color);
+  line-height: 1.5;
+}
+
+.form {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  padding: 2rem;
-  background-color: var(--bg-code-color);
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
-  text-align: center;
 }
 
-.placeholderText {
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-color);
+}
+
+.input {
+  padding: 0.75rem 1rem;
   font-size: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  transition: border-color var(--transition-fast);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--link-color);
+}
+
+.input:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  background-color: var(--bg-code-color);
+}
+
+.input:focus-visible {
+  outline: 2px solid var(--link-color);
+  outline-offset: 2px;
+}
+
+.input::placeholder {
   color: var(--text-secondary-color);
+}
+
+.inputInvalid {
+  border-color: var(--error-color);
+}
+
+.inputInvalid:focus {
+  border-color: var(--error-color);
+}
+
+.emailInput {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fieldHint {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  color: var(--text-secondary-color);
+  line-height: 1.4;
+}
+
+.fieldError {
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  color: var(--error-color);
+  line-height: 1.4;
+}
+
+.submitButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.75rem 1.5rem;
+  background-color: var(--button-bg-color);
+  color: var(--button-text-color);
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 1rem;
+  transition:
+    background-color var(--transition-fast),
+    opacity var(--transition-fast);
+}
+
+.submitButton:hover {
+  background-color: var(--button-hover-bg-color);
+}
+
+.submitButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.submitButton:focus-visible {
+  outline: 2px solid var(--link-color);
+  outline-offset: 2px;
+}
+
+.error {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.75rem 1rem;
+  background-color: rgba(220, 38, 38, 0.1);
+  border-radius: 8px;
+  border: 1px solid var(--error-color);
+}
+
+.errorMessage {
+  font-size: 0.875rem;
+  color: var(--error-color);
+}
+
+.success {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  background-color: rgba(22, 163, 74, 0.1);
+  border-radius: 8px;
+  border: 1px solid var(--success-color);
+}
+
+.successMessage {
+  font-size: 0.875rem;
+  color: var(--success-color);
+}
+
+.sessionSection {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 0.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-color);
 }
 
 .logoutButton {
   display: flex;
   align-items: center;
   justify-content: center;
+  min-height: 44px;
   padding: 0.75rem 1.5rem;
   background-color: transparent;
   color: var(--error-color);
@@ -58,6 +215,11 @@
 .logoutButton:hover {
   background-color: var(--error-color);
   color: white;
+}
+
+.logoutButton:focus-visible {
+  outline: 2px solid var(--link-color);
+  outline-offset: 2px;
 }
 
 @media (max-width: 768px) {
