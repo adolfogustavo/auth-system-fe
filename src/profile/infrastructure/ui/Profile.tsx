@@ -1,21 +1,25 @@
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { TokenPort } from '../../../shared/application/ports/TokenPort';
+import { useLogout } from './Profile.hook';
+import { LogoutUseCase } from '../../../auth/application/LogoutUseCase';
 import { Routes } from '../../../shared/infrastructure/ui/routes';
 import { Factory } from '../../../shared/infrastructure/factory';
 import { ProtectedRoute } from '../../../shared/infrastructure/ui/ProtectedRoute';
 import styles from './Profile.module.css';
 
 interface Props {
-  tokenPort: TokenPort;
+  useCase: LogoutUseCase;
 }
 
 export function Profile(props: Props) {
+  const hook = useLogout(props.useCase);
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    props.tokenPort.clearToken();
-    navigate(Routes.Login, { replace: true });
-  };
+  useEffect(() => {
+    if (hook.success) {
+      navigate(Routes.Login, { replace: true });
+    }
+  }, [hook.success]);
 
   return (
     <div className={styles.container}>
@@ -26,7 +30,7 @@ export function Profile(props: Props) {
       <div className={styles.placeholder}>
         <p className={styles.placeholderText}>Profile features coming soon...</p>
       </div>
-      <button className={styles.logoutButton} onClick={handleLogout}>
+      <button className={styles.logoutButton} onClick={hook.logout}>
         Sign Out
       </button>
     </div>
@@ -35,9 +39,10 @@ export function Profile(props: Props) {
 
 export function ProfileContainer() {
   const tokenPort = Factory.getTokenPort();
+  const useCase = Factory.createLogoutUseCase();
   return (
     <ProtectedRoute tokenPort={tokenPort}>
-      <Profile tokenPort={tokenPort} />
+      <Profile useCase={useCase} />
     </ProtectedRoute>
   );
 }

@@ -7,6 +7,7 @@ import { HttpAuthAdapter } from '../../auth/infrastructure/adapters/HttpAuthAdap
 import { RequestOtpUseCase } from '../../auth/application/RequestOtpUseCase';
 import { RegisterUserUseCase } from '../../auth/application/RegisterUserUseCase';
 import { VerifyOtpUseCase } from '../../auth/application/VerifyOtpUseCase';
+import { LogoutUseCase } from '../../auth/application/LogoutUseCase';
 import { TokenPort } from '../application/ports/TokenPort';
 import { LocalStorageTokenAdapter } from './adapters/LocalStorageTokenAdapter';
 
@@ -59,5 +60,9 @@ export class Factory {
 
   static createVerifyOtpUseCase(): VerifyOtpUseCase {
     return new VerifyOtpUseCase(this.getAuthPort());
+  }
+
+  static createLogoutUseCase(): LogoutUseCase {
+    return new LogoutUseCase(this.getTokenPort());
   }
 }
