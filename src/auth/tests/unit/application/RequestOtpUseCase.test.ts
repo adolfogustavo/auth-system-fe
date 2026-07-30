@@ -5,6 +5,9 @@ describe('The Request OTP', () => {
   it('returns success when OTP is sent', async () => {
     let calledWithEmail = '';
     const authPort: AuthPort = {
+      async register(email) {
+        return { id: 'user-id', email: email.value };
+      },
       async requestOtp(email) {
         calledWithEmail = email.value;
       },
@@ -22,6 +25,9 @@ describe('The Request OTP', () => {
 
   it('returns failure when email format is invalid', async () => {
     const authPort: AuthPort = {
+      async register(email) {
+        return { id: 'user-id', email: email.value };
+      },
       async requestOtp() {},
       async verifyOtp() {
         return '';
@@ -39,6 +45,9 @@ describe('The Request OTP', () => {
 
   it('returns failure when auth port fails', async () => {
     const authPort: AuthPort = {
+      async register(email) {
+        return { id: 'user-id', email: email.value };
+      },
       async requestOtp() {
         throw new Error('User not found');
       },

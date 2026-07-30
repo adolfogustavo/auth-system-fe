@@ -1,47 +1,46 @@
 import { useEffect } from 'react';
-import { useNavigate, Navigate, Link, useSearchParams } from 'react-router-dom';
-import { useLogin } from './Login.hook';
-import { RequestOtpUseCase } from '../../application/RequestOtpUseCase';
+import { useNavigate, Navigate, Link } from 'react-router-dom';
+import { useRegister } from './Register.hook';
+import { RegisterUserUseCase } from '../../application/RegisterUserUseCase';
 import { Routes } from '../../../shared/infrastructure/ui/routes';
 import { Factory } from '../../../shared/infrastructure/factory';
-import styles from './Login.module.css';
+import styles from './Register.module.css';
 
-export function LoginContainer() {
-  const [searchParams] = useSearchParams();
-  const initialEmail = searchParams.get('email') || '';
-  const useCase = Factory.createRequestOtpUseCase();
+export function RegisterContainer() {
+  const useCase = Factory.createRegisterUserUseCase();
   const tokenPort = Factory.getTokenPort();
   if (tokenPort.getToken().isSome()) {
     return <Navigate to={Routes.Profile} replace />;
   }
-  return <Login useCase={useCase} initialEmail={initialEmail} />;
+  return <Register useCase={useCase} />;
 }
 
 interface Props {
-  useCase: RequestOtpUseCase;
-  initialEmail: string;
+  useCase: RegisterUserUseCase;
 }
 
-export function Login(props: Props) {
-  const hook = useLogin(props.useCase, props.initialEmail);
+export function Register(props: Props) {
+  const hook = useRegister(props.useCase);
   const navigate = useNavigate();
 
   useEffect(() => {
     if (hook.success) {
-      navigate(`${Routes.Verify}?email=${encodeURIComponent(hook.email)}`);
+      navigate(`${Routes.Login}?email=${encodeURIComponent(hook.email)}`);
     }
   }, [hook.success]);
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
-    hook.requestOtp();
+    hook.register();
   };
+
+  const signInPath = hook.email ? `${Routes.Login}?email=${encodeURIComponent(hook.email)}` : Routes.Login;
 
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <h1 className={styles.title}>Sign In</h1>
-        <p className={styles.subtitle}>Enter your email to receive a verification code</p>
+        <h1 className={styles.title}>Create Account</h1>
+        <p className={styles.subtitle}>Enter your email to create a new account</p>
       </div>
       <form className={styles.form} onSubmit={handleSubmit} noValidate>
         <div className={styles.inputGroup}>
@@ -64,11 +63,11 @@ export function Login(props: Props) {
           </div>
         )}
         <button type="submit" className={styles.submitButton} disabled={hook.loading}>
-          {hook.loading ? 'Sending...' : 'Send Code'}
+          {hook.loading ? 'Creating...' : 'Create Account'}
         </button>
       </form>
-      <Link to={Routes.Register} className={styles.backLink}>
-        Create account
+      <Link to={signInPath} className={styles.backLink}>
+        Already have an account? Sign in
       </Link>
     </div>
   );

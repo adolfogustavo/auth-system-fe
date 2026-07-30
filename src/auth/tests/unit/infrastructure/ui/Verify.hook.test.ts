@@ -7,6 +7,9 @@ import { Maybe } from '../../../../../shared/domain/Maybe';
 
 function createAuthPort(overrides?: Partial<AuthPort>): AuthPort {
   return {
+    async register(email) {
+      return { id: 'user-id', email: email.value };
+    },
     async requestOtp() {},
     async verifyOtp() {
       return 'test-token';

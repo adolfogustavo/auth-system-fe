@@ -101,28 +101,6 @@
   color: var(--error-color);
 }
 
-.success {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding: 1rem;
-  background-color: rgba(22, 163, 74, 0.1);
-  border-radius: 8px;
-  border: 1px solid var(--success-color);
-  text-align: center;
-}
-
-.successTitle {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--success-color);
-}
-
-.successMessage {
-  font-size: 0.875rem;
-  color: var(--text-color);
-}
-
 .backLink {
   display: flex;
   justify-content: center;

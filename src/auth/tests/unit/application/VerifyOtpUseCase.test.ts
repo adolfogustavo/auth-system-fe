@@ -1,15 +1,22 @@
 import { VerifyOtpUseCase } from '../../../application/VerifyOtpUseCase';
 import { AuthPort } from '../../../application/ports/AuthPort';
 
+function createAuthPort(overrides: Partial<AuthPort> = {}): AuthPort {
+  return {
+    async register(email) {
+      return { id: 'user-id', email: email.value };
+    },
+    async requestOtp() {},
+    async verifyOtp() {
+      return 'jwt-token-123';
+    },
+    ...overrides,
+  };
+}
+
 describe('The Verify OTP', () => {
   it('returns success with token when OTP is valid', async () => {
-    const authPort: AuthPort = {
-      async requestOtp() {},
-      async verifyOtp() {
-        return 'jwt-token-123';
-      },
-    };
-    const useCase = new VerifyOtpUseCase(authPort);
+    const useCase = new VerifyOtpUseCase(createAuthPort());
 
     const result = await useCase.execute('user@example.com', '123456');
 
@@ -20,13 +27,7 @@ describe('The Verify OTP', () => {
   });
 
   it('returns failure when email format is invalid', async () => {
-    const authPort: AuthPort = {
-      async requestOtp() {},
-      async verifyOtp() {
-        return '';
-      },
-    };
-    const useCase = new VerifyOtpUseCase(authPort);
+    const useCase = new VerifyOtpUseCase(createAuthPort());
 
     const result = await useCase.execute('invalid-email', '123456');
 
@@ -37,13 +38,7 @@ describe('The Verify OTP', () => {
   });
 
   it('returns failure when OTP format is invalid', async () => {
-    const authPort: AuthPort = {
-      async requestOtp() {},
-      async verifyOtp() {
-        return '';
-      },
-    };
-    const useCase = new VerifyOtpUseCase(authPort);
+    const useCase = new VerifyOtpUseCase(createAuthPort());
 
     const result = await useCase.execute('user@example.com', '12345');
 
@@ -54,12 +49,11 @@ describe('The Verify OTP', () => {
   });
 
   it('returns failure when auth port fails', async () => {
-    const authPort: AuthPort = {
-      async requestOtp() {},
+    const authPort = createAuthPort({
       async verifyOtp() {
         throw new Error('Invalid OTP');
       },
-    };
+    });
     const useCase = new VerifyOtpUseCase(authPort);
 
     const result = await useCase.execute('user@example.com', '123456');

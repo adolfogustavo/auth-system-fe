@@ -5,6 +5,7 @@ import { HealthUseCase } from '../../health/application/HealthUseCase';
 import { AuthPort } from '../../auth/application/ports/AuthPort';
 import { HttpAuthAdapter } from '../../auth/infrastructure/adapters/HttpAuthAdapter';
 import { RequestOtpUseCase } from '../../auth/application/RequestOtpUseCase';
+import { RegisterUserUseCase } from '../../auth/application/RegisterUserUseCase';
 import { VerifyOtpUseCase } from '../../auth/application/VerifyOtpUseCase';
 import { TokenPort } from '../application/ports/TokenPort';
 import { LocalStorageTokenAdapter } from './adapters/LocalStorageTokenAdapter';
@@ -46,6 +47,10 @@ export class Factory {
       this.tokenPort = new LocalStorageTokenAdapter();
     }
     return this.tokenPort;
+  }
+
+  static createRegisterUserUseCase(): RegisterUserUseCase {
+    return new RegisterUserUseCase(this.getAuthPort());
   }
 
   static createRequestOtpUseCase(): RequestOtpUseCase {

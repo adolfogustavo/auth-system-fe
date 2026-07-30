@@ -1,21 +1,23 @@
 import { useState } from 'react';
 import { Maybe } from '../../../shared/domain/Maybe';
-import { RequestOtpUseCase } from '../../application/RequestOtpUseCase';
+import { RegisterUserUseCase } from '../../application/RegisterUserUseCase';
 
-interface LoginState {
+interface RegisterState {
   email: string;
   loading: boolean;
   error: Maybe<string>;
   success: boolean;
 }
 
-export function useLogin(useCase: RequestOtpUseCase, initialEmail = '') {
-  const [state, setState] = useState<LoginState>({
-    email: initialEmail,
-    loading: false,
-    error: Maybe.none(),
-    success: false,
-  });
+const initialState: RegisterState = {
+  email: '',
+  loading: false,
+  error: Maybe.none(),
+  success: false,
+};
+
+export function useRegister(useCase: RegisterUserUseCase) {
+  const [state, setState] = useState<RegisterState>(initialState);
 
   const setEmail = (email: string) => {
     setState((prev) => ({ ...prev, email, error: Maybe.none() }));
@@ -33,7 +35,7 @@ export function useLogin(useCase: RequestOtpUseCase, initialEmail = '') {
     setState((prev) => ({ ...prev, error: Maybe.some(error), loading: false }));
   };
 
-  const requestOtp = async () => {
+  const register = async () => {
     startLoading();
     const result = await useCase.execute(state.email);
     if (result.success) {
@@ -49,6 +51,6 @@ export function useLogin(useCase: RequestOtpUseCase, initialEmail = '') {
     error: state.error,
     success: state.success,
     setEmail,
-    requestOtp,
+    register,
   };
 }

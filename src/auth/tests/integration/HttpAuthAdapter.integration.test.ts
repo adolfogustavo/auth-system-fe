@@ -4,9 +4,29 @@ import { Email } from '../../domain/value-objects/Email';
 import { OtpCode } from '../../domain/value-objects/OtpCode';
 
 describe('The HttpAuthAdapter', () => {
-  const apiUrl = process.env.VITE_API_URL || 'http://localhost:3000';
+  const apiUrl = process.env.VITE_API_URL || 'http://localhost:8080';
   const httpClient = new HttpClient(apiUrl);
   const adapter = new HttpAuthAdapter(httpClient);
+
+  describe('register', () => {
+    it('creates a user in the API and returns id and email', async () => {
+      const uniqueEmail = `register-${Date.now()}@example.com`;
+      const email = Email.create(uniqueEmail);
+
+      const registeredUser = await adapter.register(email);
+
+      expect(registeredUser.id.length).toBeGreaterThan(0);
+      expect(registeredUser.email).toBe(uniqueEmail);
+    });
+
+    it('throws an error when the email is already registered', async () => {
+      const uniqueEmail = `duplicate-${Date.now()}@example.com`;
+      const email = Email.create(uniqueEmail);
+      await adapter.register(email);
+
+      await expect(adapter.register(email)).rejects.toThrow('Email already registered');
+    });
+  });
 
   describe('requestOtp', () => {
     it('sends OTP request to the API for registered user', async () => {
