@@ -36,6 +36,7 @@ interface ProfileState {
   saving: boolean;
   error: Maybe<string>;
   success: boolean;
+  sessionInvalid: boolean;
 }
 
 const initialProfileState: ProfileState = {
@@ -47,6 +48,7 @@ const initialProfileState: ProfileState = {
   saving: false,
   error: Maybe.none(),
   success: false,
+  sessionInvalid: false,
 };
 
 export function useProfile(getUseCase: GetProfileUseCase, updateUseCase: UpdateProfileUseCase) {
@@ -101,6 +103,18 @@ export function useProfile(getUseCase: GetProfileUseCase, updateUseCase: UpdateP
       loading: false,
       saving: false,
       success: false,
+      sessionInvalid: false,
+    }));
+  };
+
+  const setSessionInvalid = (error: string) => {
+    setState((prev) => ({
+      ...prev,
+      error: Maybe.some(error),
+      loading: false,
+      saving: false,
+      success: false,
+      sessionInvalid: true,
     }));
   };
 
@@ -122,6 +136,8 @@ export function useProfile(getUseCase: GetProfileUseCase, updateUseCase: UpdateP
     const result = await getUseCase.execute();
     if (result.success) {
       applyProfile(result.profile);
+    } else if (result.sessionInvalid === true) {
+      setSessionInvalid(result.error);
     } else {
       setError(result.error);
     }
@@ -132,6 +148,8 @@ export function useProfile(getUseCase: GetProfileUseCase, updateUseCase: UpdateP
     const result = await updateUseCase.execute(state.name, state.lastName, state.phone);
     if (result.success) {
       setSuccess(result.profile);
+    } else if (result.sessionInvalid === true) {
+      setSessionInvalid(result.error);
     } else {
       setError(result.error);
     }
@@ -146,6 +164,7 @@ export function useProfile(getUseCase: GetProfileUseCase, updateUseCase: UpdateP
     saving: state.saving,
     error: state.error,
     success: state.success,
+    sessionInvalid: state.sessionInvalid,
     setName,
     setLastName,
     setPhone,

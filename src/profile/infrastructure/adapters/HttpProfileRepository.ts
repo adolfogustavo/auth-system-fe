@@ -31,15 +31,27 @@ export class HttpProfileRepository implements ProfileRepository {
       if (HttpClientError.isNotFoundError(error)) {
         return Maybe.none();
       }
-      throw error;
+      this.rethrowAfterUnauthorized(error);
     }
   }
 
   async update(data: ProfileUpdateParams): Promise<Profile> {
-    const response = await this.httpClient.put<ProfileResponse>(Endpoints.ProfileMe, data, {
-      headers: this.authorizationHeader(),
-    });
-    return this.toDomain(response);
+    try {
+      const response = await this.httpClient.put<ProfileResponse>(Endpoints.ProfileMe, data, {
+        headers: this.authorizationHeader(),
+      });
+      return this.toDomain(response);
+    } catch (error) {
+      this.rethrowAfterUnauthorized(error);
+    }
+  }
+
+  private rethrowAfterUnauthorized(error: unknown): never {
+    if (HttpClientError.isUnauthorizedError(error)) {
+      this.tokenPort.clearToken();
+      throw DomainError.create('Invalid or expired token');
+    }
+    throw error;
   }
 
   private authorizationHeader(): Record<string, string> {

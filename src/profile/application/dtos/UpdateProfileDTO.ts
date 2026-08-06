@@ -8,6 +8,7 @@ type UpdateProfileSuccess = {
 type UpdateProfileFailure = {
   success: false;
   error: string;
+  sessionInvalid?: boolean;
 };
 
 export type UpdateProfileDTO = UpdateProfileSuccess | UpdateProfileFailure;

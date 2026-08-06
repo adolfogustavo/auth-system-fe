@@ -47,4 +47,25 @@ test.describe('Profile Editing Flow', () => {
 
     await expect(page).toHaveURL(Routes.Login);
   });
+
+  test('sends visitors with an expired session token to sign in', async ({ page }) => {
+    const pastExpiration = Math.floor(Date.now() / 1000) - 60;
+    const payload = Buffer.from(JSON.stringify({ email: 'expired@example.com', exp: pastExpiration }))
+      .toString('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
+    const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))
+      .toString('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
+    const expiredToken = `${header}.${payload}.fakesignature`;
+
+    await page.goto(Routes.Login);
+    await page.evaluate((token) => localStorage.setItem('auth_token', token), expiredToken);
+    await page.goto(Routes.Profile);
+
+    await expect(page).toHaveURL(Routes.Login);
+  });
 });

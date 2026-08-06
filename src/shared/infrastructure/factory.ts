@@ -8,6 +8,7 @@ import { RequestOtpUseCase } from '../../auth/application/RequestOtpUseCase';
 import { RegisterUserUseCase } from '../../auth/application/RegisterUserUseCase';
 import { VerifyOtpUseCase } from '../../auth/application/VerifyOtpUseCase';
 import { LogoutUseCase } from '../../auth/application/LogoutUseCase';
+import { ValidateSessionUseCase } from '../../auth/application/ValidateSessionUseCase';
 import { TokenPort } from '../application/ports/TokenPort';
 import { LocalStorageTokenAdapter } from './adapters/LocalStorageTokenAdapter';
 import { ProfileRepository } from '../../profile/domain/repositories/ProfileRepository';
@@ -69,6 +70,10 @@ export class Factory {
 
   static createLogoutUseCase(): LogoutUseCase {
     return new LogoutUseCase(this.getTokenPort());
+  }
+
+  static createValidateSessionUseCase(): ValidateSessionUseCase {
+    return new ValidateSessionUseCase(this.getTokenPort());
   }
 
   static getProfileRepository(): ProfileRepository {

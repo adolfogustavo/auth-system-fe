@@ -19,12 +19,20 @@ export class HttpClientError extends Error {
     return this.status === 404;
   }
 
+  isUnauthorized(): boolean {
+    return this.status === 401;
+  }
+
   static isNotFoundError(error: unknown): boolean {
     return error instanceof HttpClientError && error.isNotFound();
   }
 
   static isBadRequestError(error: unknown): boolean {
     return error instanceof HttpClientError && error.isBadRequest();
+  }
+
+  static isUnauthorizedError(error: unknown): boolean {
+    return error instanceof HttpClientError && error.isUnauthorized();
   }
 }
 

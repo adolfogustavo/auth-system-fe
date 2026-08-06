@@ -10,8 +10,8 @@ export function LoginContainer() {
   const [searchParams] = useSearchParams();
   const initialEmail = searchParams.get('email') || '';
   const useCase = Factory.createRequestOtpUseCase();
-  const tokenPort = Factory.getTokenPort();
-  if (tokenPort.getToken().isSome()) {
+  const session = Factory.createValidateSessionUseCase().execute();
+  if (session.isValid) {
     return <Navigate to={Routes.Profile} replace />;
   }
   return <Login useCase={useCase} initialEmail={initialEmail} />;

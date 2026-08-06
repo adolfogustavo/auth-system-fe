@@ -18,8 +18,15 @@ export class UpdateProfileUseCase {
       return { success: true, profile: this.toDto(updated) };
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
+      if (this.isSessionInvalid(error)) {
+        return { success: false, error: message, sessionInvalid: true };
+      }
       return { success: false, error: message };
     }
+  }
+
+  private isSessionInvalid(error: unknown): boolean {
+    return error instanceof DomainError && error.message === 'Invalid or expired token';
   }
 
   private ensureAtLeastOneField(name: string, lastName: string, phone: string): void {

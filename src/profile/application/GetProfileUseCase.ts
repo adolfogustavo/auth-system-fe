@@ -1,5 +1,6 @@
 import { Profile } from '../domain/entities/Profile';
 import { ProfileRepository } from '../domain/repositories/ProfileRepository';
+import { DomainError } from '../../shared/domain/DomainError';
 import { GetProfileDTO } from './dtos/GetProfileDTO';
 import { ProfileDTO } from './dtos/ProfileDTO';
 
@@ -15,8 +16,15 @@ export class GetProfileUseCase {
       return { success: true, profile: this.toDto(maybeProfile.getOrThrow()) };
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
+      if (this.isSessionInvalid(error)) {
+        return { success: false, error: message, sessionInvalid: true };
+      }
       return { success: false, error: message };
     }
+  }
+
+  private isSessionInvalid(error: unknown): boolean {
+    return error instanceof DomainError && error.message === 'Invalid or expired token';
   }
 
   private toDto(profile: Profile): ProfileDTO {

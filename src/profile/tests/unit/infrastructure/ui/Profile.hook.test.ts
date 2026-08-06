@@ -7,6 +7,7 @@ import { InMemoryProfileRepository } from '../../../../domain/repositories/Profi
 import { Profile } from '../../../../domain/entities/Profile';
 import { TokenPort } from '../../../../../shared/application/ports/TokenPort';
 import { Maybe } from '../../../../../shared/domain/Maybe';
+import { DomainError } from '../../../../../shared/domain/DomainError';
 
 const createdAt = '2024-01-01T00:00:00.000Z';
 
@@ -82,6 +83,28 @@ describe('The Profile Editing', () => {
     expect(result.current.error.isSome()).toBe(true);
     expect(result.current.error.getOrThrow()).toBe('Profile not found');
     expect(result.current.profile.isNone()).toBe(true);
+    expect(result.current.sessionInvalid).toBe(false);
+  });
+
+  it('flags an invalid session when loading fails for an expired token', async () => {
+    const repository = {
+      async findCurrent() {
+        throw DomainError.create('Invalid or expired token');
+      },
+      async update() {
+        throw DomainError.create('Unused');
+      },
+    };
+    const getUseCase = new GetProfileUseCase(repository);
+    const updateUseCase = new UpdateProfileUseCase(repositoryWithJaneDoeProfile());
+    const { result } = renderHook(() => useProfile(getUseCase, updateUseCase));
+
+    await act(async () => {
+      await result.current.loadProfile();
+    });
+
+    expect(result.current.sessionInvalid).toBe(true);
+    expect(result.current.error.getOrThrow()).toBe('Invalid or expired token');
   });
 
   it('keeps the editable fields in sync while typing', () => {

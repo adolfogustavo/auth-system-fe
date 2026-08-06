@@ -27,10 +27,10 @@ export function Profile(props: Props) {
     hook.loadProfile();
   }, []);
   useEffect(() => {
-    if (logoutHook.success) {
+    if (logoutHook.success || hook.sessionInvalid) {
       navigate(Routes.Login, { replace: true });
     }
-  }, [logoutHook.success]);
+  }, [logoutHook.success, hook.sessionInvalid]);
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
     hook.saveProfile();
@@ -159,12 +159,12 @@ export function Profile(props: Props) {
 }
 
 export function ProfileContainer() {
-  const tokenPort = Factory.getTokenPort();
+  const session = Factory.createValidateSessionUseCase().execute();
   const getProfileUseCase = Factory.createGetProfileUseCase();
   const updateProfileUseCase = Factory.createUpdateProfileUseCase();
   const logoutUseCase = Factory.createLogoutUseCase();
   return (
-    <ProtectedRoute tokenPort={tokenPort}>
+    <ProtectedRoute isSessionValid={session.isValid}>
       <Profile
         getProfileUseCase={getProfileUseCase}
         updateProfileUseCase={updateProfileUseCase}

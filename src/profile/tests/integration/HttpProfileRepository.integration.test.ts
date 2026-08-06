@@ -14,14 +14,22 @@ describe('The Profile API Client', () => {
   // CI platforms set CI=true; skip here because these tests need a live API (and Mongo for OTP).
   const conditionalIt = process.env.CI ? it.skip : it;
 
-  function tokenPortWithBearer(token: string): TokenPort {
-    return {
-      saveToken() {},
-      getToken() {
-        return Maybe.some(token);
+  function tokenPortWithBearer(token: string): TokenPort & { cleared: boolean } {
+    let current: Maybe<string> = Maybe.some(token);
+    const port = {
+      cleared: false,
+      saveToken(value: string) {
+        current = Maybe.some(value);
       },
-      clearToken() {},
+      getToken() {
+        return current;
+      },
+      clearToken() {
+        port.cleared = true;
+        current = Maybe.none();
+      },
     };
+    return port;
   }
 
   function readOtpFromDatabase(email: string): string {
@@ -67,8 +75,10 @@ describe('The Profile API Client', () => {
   });
 
   conditionalIt('rejects access with an invalid session token', async () => {
-    const repository = new HttpProfileRepository(httpClient, tokenPortWithBearer('invalid.jwt.token'));
+    const tokenPort = tokenPortWithBearer('invalid.jwt.token');
+    const repository = new HttpProfileRepository(httpClient, tokenPort);
 
-    await expect(repository.findCurrent()).rejects.toThrow();
+    await expect(repository.findCurrent()).rejects.toThrow('Invalid or expired token');
+    expect(tokenPort.cleared).toBe(true);
   });
 });

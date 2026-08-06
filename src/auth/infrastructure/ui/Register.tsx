@@ -8,8 +8,8 @@ import styles from './Register.module.css';
 
 export function RegisterContainer() {
   const useCase = Factory.createRegisterUserUseCase();
-  const tokenPort = Factory.getTokenPort();
-  if (tokenPort.getToken().isSome()) {
+  const session = Factory.createValidateSessionUseCase().execute();
+  if (session.isValid) {
     return <Navigate to={Routes.Profile} replace />;
   }
   return <Register useCase={useCase} />;

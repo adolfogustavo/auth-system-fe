@@ -1,6 +1,8 @@
 import { UpdateProfileUseCase } from '../../../application/UpdateProfileUseCase';
-import { InMemoryProfileRepository } from '../../../domain/repositories/ProfileRepository';
+import { InMemoryProfileRepository, ProfileRepository } from '../../../domain/repositories/ProfileRepository';
 import { Profile } from '../../../domain/entities/Profile';
+import { DomainError } from '../../../../shared/domain/DomainError';
+import { Maybe } from '../../../../shared/domain/Maybe';
 
 describe('The Profile Update', () => {
   const createdAt = '2024-01-01T00:00:00.000Z';
@@ -60,6 +62,26 @@ describe('The Profile Update', () => {
     expect(result.success).toBe(false);
     if (!result.success) {
       expect(result.error).toBe('Profile not found');
+    }
+  });
+
+  it('reports an invalid session when the repository rejects the token', async () => {
+    const repository: ProfileRepository = {
+      async findCurrent() {
+        return Maybe.none();
+      },
+      async update() {
+        throw DomainError.create('Invalid or expired token');
+      },
+    };
+    const useCase = new UpdateProfileUseCase(repository);
+
+    const result = await useCase.execute('John', 'Smith', '699999999');
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error).toBe('Invalid or expired token');
+      expect(result.sessionInvalid).toBe(true);
     }
   });
 });

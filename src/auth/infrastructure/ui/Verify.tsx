@@ -11,7 +11,8 @@ export function VerifyContainer() {
   const [searchParams] = useSearchParams();
   const email = searchParams.get('email') || '';
   const tokenPort = Factory.getTokenPort();
-  if (tokenPort.getToken().isSome()) {
+  const session = Factory.createValidateSessionUseCase().execute();
+  if (session.isValid) {
     return <Navigate to={Routes.Profile} replace />;
   }
   if (!email) {

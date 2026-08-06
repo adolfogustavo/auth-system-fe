@@ -8,6 +8,7 @@ type GetProfileSuccess = {
 type GetProfileFailure = {
   success: false;
   error: string;
+  sessionInvalid?: boolean;
 };
 
 export type GetProfileDTO = GetProfileSuccess | GetProfileFailure;
